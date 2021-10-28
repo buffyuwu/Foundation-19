@@ -77,7 +77,8 @@ GLOBAL_LIST_EMPTY(scp049_1s)
 	if(target == src)
 		target = null
 		return target
-
+	if(!(target in view(15, src)))
+		target = null
 	if (!target || target.stat == DEAD)
 		var/list/possible_targets = list()
 		for(var/mob/living/carbon/human/L in view(15, src))
@@ -110,24 +111,33 @@ GLOBAL_LIST_EMPTY(scp049_1s)
 
 /mob/living/carbon/human/scp049/proc/pursueTarget()
 
-	addtimer(CALLBACK(src, .proc/getTarget), 3)
+	addtimer(CALLBACK(src, .proc/getTarget), 5)
 
 	if(!target)
 		return FALSE
-
+	//human nearby? wander up to them
 	if (!(target in orange(1, src)))
 		walk_to(src, target, 1,10,0.1)
-		CHECK_TICK
 		return TRUE
-
 	walk(src, null)
-	if(check_nearby())
-		scp049_attack(target)
+	//no rng proc (see: life()) for the ai doctor to start murdering? chill near them for a while
 	if(!target.pestilence)
 		target = null
 		return FALSE
+	//below is the part where they're being chased with lethal intent and him running up to them is to do his good work
+	addtimer(CALLBACK(src, .proc/SCP049_Chase_Music), 40 SECONDS)
+
+	if(check_nearby())
+		scp049_attack(target)
+
+	CHECK_TICK
 
 	return TRUE
+
+/mob/living/carbon/human/scp049/proc/SCP049_Chase_Music(mob/living/carbon/human/target)
+	if(!target)
+		return
+	target.playsound_local(target, 'sound/scp/chase/049_chase.ogg', 50, 0)
 
 /mob/living/carbon/human/scp049/proc/check_nearby()
 	if(!target)
@@ -140,7 +150,7 @@ GLOBAL_LIST_EMPTY(scp049_1s)
 		target = null
 		return FALSE
 
-/mob/living/carbon/human/scp049/proc/scp049_attack(var/mob/living/carbon/human/target)
+/mob/living/carbon/human/scp049/proc/scp049_attack(mob/living/carbon/human/target)
 	if(check_nearby() && !curing)
 		if(isscp049_1(target))
 			return
